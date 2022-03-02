@@ -1,0 +1,2 @@
+# Health Request
+GET http://localhost:6161/api/health

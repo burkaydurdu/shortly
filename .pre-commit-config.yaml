@@ -3,7 +3,7 @@ repos:
     rev: v1.41.1
     hooks:
       - id: golangci-lint
-        entry: golangci-lint run -c .cd/.golangci.yml -v
+        entry: golangci-lint run -c .golangci.yml -v
         stages:
           - commit
 
@@ -11,5 +11,6 @@ repos:
     rev: master
     hooks:
       - id: go-unit-tests
+        entry: go test -v ./... -tags=unit
         stages:
           - commit

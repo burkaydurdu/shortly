@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.41.1
+    hooks:
+      - id: golangci-lint
+        entry: golangci-lint run -c .cd/.golangci.yml -v
+        stages:
+          - commit
+
+  - repo: git://github.com/dnephin/pre-commit-golang
+    rev: master
+    hooks:
+      - id: go-unit-tests
+        stages:
+          - commit

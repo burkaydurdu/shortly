@@ -12,9 +12,9 @@ type ShortlyLog struct {
 	format  string
 }
 
-func (s *ShortlyLog) ZapError(message string, error error) {
+func (s *ShortlyLog) ZapError(message string, err error) {
 	s.Message = message
-	s.Error = error
+	s.Error = err
 	s.format = fmt.Sprintf("[ERROR] %s, %v", s.Message, s.Error)
 	log.Println(s.format)
 }
@@ -28,4 +28,11 @@ func (s *ShortlyLog) Zap(message string) {
 
 	s.format = fmt.Sprintf("[%s] %s", s.Tag, s.Message)
 	log.Println(s.format)
+}
+
+func (s *ShortlyLog) ZapFatal(message string, err error) {
+	s.Message = message
+
+	s.format = fmt.Sprintf("[FATAL] %s", s.Message)
+	log.Fatalln(s.format, err)
 }

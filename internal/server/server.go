@@ -5,6 +5,11 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"time"
+
+	shortlyLog "github.com/burkaydurdu/shortly/pkg/log"
+
+	shortlyDB "github.com/burkaydurdu/shortly/internal/db"
 
 	"github.com/burkaydurdu/shortly/internal/domain/shortly"
 
@@ -19,7 +24,7 @@ type route struct {
 
 type ShortlyMux struct {
 	routes []*route
-	l      *ShortlyLog
+	l      *shortlyLog.ShortlyLog
 }
 
 func (h *ShortlyMux) Handler(pattern *regexp.Regexp, handler http.Handler) {
@@ -45,14 +50,14 @@ func (h *ShortlyMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type Server struct {
 	config *config.Config
 	s      *ShortlyMux
-	l      *ShortlyLog
+	l      *shortlyLog.ShortlyLog
 }
 
 func NewServer(c *config.Config) *Server {
 	server := &Server{}
 
 	// Create shortly log for middleware
-	middlewareLog := ShortlyLog{
+	middlewareLog := shortlyLog.ShortlyLog{
 		Tag: "HTTP",
 	}
 
@@ -62,11 +67,11 @@ func NewServer(c *config.Config) *Server {
 	}
 
 	// Initialize ShortlyLog
-	shortlyLog := new(ShortlyLog)
+	slog := new(shortlyLog.ShortlyLog)
 
 	server.config = c
 	server.s = mux
-	server.l = shortlyLog
+	server.l = slog
 
 	return server
 }
@@ -74,7 +79,20 @@ func NewServer(c *config.Config) *Server {
 func (s *Server) Start() error {
 	log.Printf("Listening on :%d...", s.config.Server.Port)
 
-	shortlyService := shortly.NewShortlyService("./data")
+	shortlyBase := shortlyDB.ShortlyBase{
+		FileName: "shortly",
+		Log:      s.l,
+	}
+
+	db, err := shortlyBase.InitialDB()
+
+	go s.saveToDisk(shortlyBase, db)
+
+	if err != nil {
+		s.l.ZapFatal("Couldn't not connect Shortly DB", err)
+	}
+
+	shortlyService := shortly.NewShortlyService(db)
 	shortlyHandler := shortly.NewShortlyHandler(shortlyService)
 
 	s.s.Handler(
@@ -83,11 +101,21 @@ func (s *Server) Start() error {
 	)
 
 	s.s.Handler(
+		regexp.MustCompile("/api/save"),
+		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.SaveShortURL)),
+	)
+
+	s.s.Handler(
+		regexp.MustCompile("api/list"),
+		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.GetShortList)),
+	)
+
+	s.s.Handler(
 		regexp.MustCompile("^/[^/]*$"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.RedirectURL)),
 	)
 
-	err := http.ListenAndServe(
+	err = http.ListenAndServe(
 		fmt.Sprintf(":%d", s.config.Server.Port),
 		s.s,
 	)
@@ -100,5 +128,17 @@ func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		s.l.ZapError(shortlyError.ParserError, err)
+	}
+}
+
+func (s *Server) saveToDisk(shortlyBase shortlyDB.ShortlyBase, db *shortlyDB.DB) {
+	for {
+		time.Sleep(time.Second * 2)
+
+		err := shortlyBase.SaveToFile(db)
+		if err != nil {
+			shortlyBase.Log.ZapFatal("couldn't save data in disk", err)
+			return
+		}
 	}
 }

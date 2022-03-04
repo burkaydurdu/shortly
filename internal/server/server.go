@@ -91,7 +91,7 @@ func (s *Server) Start() error {
 		s.l.ZapFatal("Couldn't not connect Shortly DB", err)
 	}
 
-	go s.saveToDisk(shortlyBase, db, s.config.DurationOfWriteToDisk, s.config.MemoryPath)
+	go s.saveToDisk(shortlyBase, db, s.config.DurationOfWriteToDisk)
 
 	shortlyService := shortly.NewShortlyService(db, s.config.LengthOfCode)
 	shortlyHandler := shortly.NewShortlyHandler(shortlyService, s.l)
@@ -132,14 +132,31 @@ func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) saveToDisk(shortlyBase shortlyDB.ShortlyBase, db *shortlyDB.DB, durationOfWriteToDisk time.Duration, memoryPath string) {
+func (s *Server) saveToDisk(shortlyBase shortlyDB.ShortlyBase, db *shortlyDB.DB, durationOfWriteToDisk time.Duration) {
 	for {
 		time.Sleep(durationOfWriteToDisk)
 
-		err := shortlyBase.SaveToFile(db, memoryPath)
+		localDB, err := shortlyBase.ReadFromFile()
+
 		if err != nil {
-			shortlyBase.Log.ZapFatal("couldn't save data in disk", err)
-			return
+			s.l.ZapFatal("couldn't read db", err)
+		}
+
+		// Compare memory and file
+		if len(localDB.ShortURL) != len(db.ShortURL) {
+			// Append new data from file to in-memory
+			for _, s := range localDB.ShortURL {
+				if db.FindByCode(s.Code) == nil {
+					db.ShortURL = append(db.ShortURL, s)
+				}
+			}
+
+			err := shortlyBase.SaveToFile(db)
+
+			if err != nil {
+				shortlyBase.Log.ZapFatal("couldn't save data in disk", err)
+				return
+			}
 		}
 	}
 }

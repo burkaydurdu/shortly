@@ -15,32 +15,33 @@ type Service interface {
 }
 
 type shortlyService struct {
-	db *db.DB
+	db           *db.DB
+	lengthOfCode int
 }
 
 func (s *shortlyService) RedirectURL(code string) (string, error) {
-	for i, sURL := range s.db.ShortUrl {
+	for i, sURL := range s.db.ShortURL {
 		if code == sURL.Code {
 			// Increment visit count
-			s.db.ShortUrl[i].VisitCount += 1
+			s.db.ShortURL[i].VisitCount++
 			return sURL.OriginalURL, nil
 		}
 	}
 
-	return "", shortlyError.AddressNotFoundErr
+	return "", shortlyError.ErrAddressNotFound
 }
 
 func (s *shortlyService) SaveShortURL(host string, requestBody *SaveRequestDTO) *SaveResponseDTO {
-	code := generateShortlyCode(s.db.ShortUrl)
+	code := generateShortlyCode(s.db.ShortURL, s.lengthOfCode)
 
 	shortly := db.Shortly{
-		OriginalURL: requestBody.OriginalUrl,
+		OriginalURL: requestBody.OriginalURL,
 		Code:        code,
 		VisitCount:  0,
 		ShortURL:    fmt.Sprintf("http://%s/%s", host, code),
 	}
 
-	s.db.ShortUrl = append(s.db.ShortUrl, shortly)
+	s.db.ShortURL = append(s.db.ShortURL, shortly)
 
 	var responseBody = &SaveResponseDTO{
 		ShortURL: shortly.ShortURL,
@@ -50,7 +51,7 @@ func (s *shortlyService) SaveShortURL(host string, requestBody *SaveRequestDTO) 
 }
 
 func (s *shortlyService) GetShortList() []db.Shortly {
-	return s.db.ShortUrl
+	return s.db.ShortURL
 }
 
 /*
@@ -59,20 +60,21 @@ func (s *shortlyService) GetShortList() []db.Shortly {
  * If it generates same code, it will run again
  * We can generate 54 x 54 x 54 x 54 x 54 x 54 different values
  */
-func generateShortlyCode(list []db.Shortly) string {
-	code := util.RandShortlyCode(6)
+func generateShortlyCode(list []db.Shortly, lengthOfCode int) string {
+	code := util.RandShortlyCode(lengthOfCode)
 
 	for _, s := range list {
 		if code == s.Code {
-			return generateShortlyCode(list)
+			return generateShortlyCode(list, lengthOfCode)
 		}
 	}
 
 	return code
 }
 
-func NewShortlyService(db *db.DB) Service {
+func NewShortlyService(shortlyDB *db.DB, lengthOfCode int) Service {
 	return &shortlyService{
-		db: db,
+		db:           shortlyDB,
+		lengthOfCode: lengthOfCode,
 	}
 }

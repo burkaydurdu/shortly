@@ -1,7 +1,7 @@
 package shortly
 
 type SaveRequestDTO struct {
-	OriginalUrl string `json:"original_url"`
+	OriginalURL string `json:"original_url"`
 }
 
 type SaveResponseDTO struct {

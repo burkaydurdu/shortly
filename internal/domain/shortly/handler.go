@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/burkaydurdu/shortly/pkg/log"
+
 	shortlyError "github.com/burkaydurdu/shortly/pkg/error"
 )
 
@@ -15,6 +17,7 @@ type HTTPHandler interface {
 
 type shortlyHandler struct {
 	s Service
+	l *log.ShortlyLog
 }
 
 func (s *shortlyHandler) RedirectURL(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +44,8 @@ func (s *shortlyHandler) SaveShortURL(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(shortlyError.ParserError))
+		httpResponse(w, []byte(shortlyError.ParserError), s.l)
+
 		return
 	}
 
@@ -50,20 +54,28 @@ func (s *shortlyHandler) SaveShortURL(w http.ResponseWriter, r *http.Request) {
 	responseByteBody, _ := json.Marshal(responseBody)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(responseByteBody)
+	httpResponse(w, responseByteBody, s.l)
 }
 
 func (s *shortlyHandler) GetShortList(w http.ResponseWriter, _ *http.Request) {
-	shortlyUrl := s.s.GetShortList()
+	shortlyURL := s.s.GetShortList()
 
-	responseByteBody, _ := json.Marshal(shortlyUrl)
+	responseByteBody, _ := json.Marshal(shortlyURL)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(responseByteBody)
+	httpResponse(w, responseByteBody, s.l)
 }
 
-func NewShortlyHandler(s Service) HTTPHandler {
+func httpResponse(w http.ResponseWriter, response []byte, l *log.ShortlyLog) {
+	_, err := w.Write(response)
+	if err != nil {
+		l.ZapFatal(shortlyError.ResponseError, err)
+	}
+}
+
+func NewShortlyHandler(s Service, l *log.ShortlyLog) HTTPHandler {
 	return &shortlyHandler{
 		s: s,
+		l: l,
 	}
 }

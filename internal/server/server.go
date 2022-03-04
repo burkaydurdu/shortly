@@ -86,14 +86,14 @@ func (s *Server) Start() error {
 
 	db, err := shortlyBase.InitialDB()
 
-	go s.saveToDisk(shortlyBase, db)
+	go s.saveToDisk(shortlyBase, db, s.config.DurationOfWriteToDisk)
 
 	if err != nil {
 		s.l.ZapFatal("Couldn't not connect Shortly DB", err)
 	}
 
-	shortlyService := shortly.NewShortlyService(db)
-	shortlyHandler := shortly.NewShortlyHandler(shortlyService)
+	shortlyService := shortly.NewShortlyService(db, s.config.LengthOfCode)
+	shortlyHandler := shortly.NewShortlyHandler(shortlyService, s.l)
 
 	s.s.Handler(
 		regexp.MustCompile("/api/health"),
@@ -131,9 +131,9 @@ func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) saveToDisk(shortlyBase shortlyDB.ShortlyBase, db *shortlyDB.DB) {
+func (s *Server) saveToDisk(shortlyBase shortlyDB.ShortlyBase, db *shortlyDB.DB, durationOfWriteToDisk time.Duration) {
 	for {
-		time.Sleep(time.Second * 2)
+		time.Sleep(durationOfWriteToDisk)
 
 		err := shortlyBase.SaveToFile(db)
 		if err != nil {

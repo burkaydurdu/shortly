@@ -14,5 +14,5 @@ func TestShortlyService_GenerateShortlyCode(t *testing.T) {
 		},
 	}
 
-	assert.Len(t, generateShortlyCode(shortlyList), 6)
+	assert.Len(t, generateShortlyCode(shortlyList, 6), 6)
 }

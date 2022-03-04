@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 
@@ -18,7 +19,7 @@ type Shortly struct {
 }
 
 type DB struct {
-	ShortUrl []Shortly `json:"short_url"`
+	ShortURL []Shortly `json:"short_url"`
 }
 
 type ShortlyBase struct {
@@ -57,13 +58,19 @@ func (s *ShortlyBase) InitialDB() (*DB, error) {
 
 	err = json.Unmarshal(file, &DB)
 
+	if err != nil {
+		return nil, err
+	}
+
 	return DB, nil
 }
 
 func (s *ShortlyBase) SaveToFile(db *DB) error {
+	filePermissionCode := 0600
+
 	path := fmt.Sprintf("%s.json", s.FileName)
 
 	fileData, _ := json.Marshal(db)
 
-	return ioutil.WriteFile(path, fileData, 0644)
+	return ioutil.WriteFile(path, fileData, fs.FileMode(filePermissionCode))
 }

@@ -1,6 +1,9 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 /*
  *
@@ -19,9 +22,11 @@ type ServerConfig struct {
 }
 
 type Config struct {
-	AppName string
-	IsDebug bool
-	Server  ServerConfig
+	AppName               string
+	IsDebug               bool
+	LengthOfCode          int
+	DurationOfWriteToDisk time.Duration
+	Server                ServerConfig
 }
 
 func New() (*Config, error) {
@@ -29,6 +34,8 @@ func New() (*Config, error) {
 
 	config.AppName = AppName
 	config.IsDebug = IsDebug
+	config.LengthOfCode = 6
+	config.DurationOfWriteToDisk = time.Second * 2
 	config.Server = ServerConfig{
 		Port: Port,
 	}

@@ -80,17 +80,18 @@ func (s *Server) Start() error {
 	log.Printf("Listening on :%d...", s.config.Server.Port)
 
 	shortlyBase := shortlyDB.ShortlyBase{
-		FileName: "shortly",
-		Log:      s.l,
+		FileName:   "shortly",
+		Log:        s.l,
+		MemoryPath: s.config.MemoryPath,
 	}
 
 	db, err := shortlyBase.InitialDB()
 
-	go s.saveToDisk(shortlyBase, db, s.config.DurationOfWriteToDisk)
-
 	if err != nil {
 		s.l.ZapFatal("Couldn't not connect Shortly DB", err)
 	}
+
+	go s.saveToDisk(shortlyBase, db, s.config.DurationOfWriteToDisk, s.config.MemoryPath)
 
 	shortlyService := shortly.NewShortlyService(db, s.config.LengthOfCode)
 	shortlyHandler := shortly.NewShortlyHandler(shortlyService, s.l)
@@ -131,11 +132,11 @@ func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) saveToDisk(shortlyBase shortlyDB.ShortlyBase, db *shortlyDB.DB, durationOfWriteToDisk time.Duration) {
+func (s *Server) saveToDisk(shortlyBase shortlyDB.ShortlyBase, db *shortlyDB.DB, durationOfWriteToDisk time.Duration, memoryPath string) {
 	for {
 		time.Sleep(durationOfWriteToDisk)
 
-		err := shortlyBase.SaveToFile(db)
+		err := shortlyBase.SaveToFile(db, memoryPath)
 		if err != nil {
 			shortlyBase.Log.ZapFatal("couldn't save data in disk", err)
 			return

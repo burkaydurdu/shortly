@@ -27,6 +27,7 @@ type Config struct {
 	LengthOfCode          int
 	DurationOfWriteToDisk time.Duration
 	Server                ServerConfig
+	MemoryPath            string
 }
 
 func New() (*Config, error) {
@@ -36,6 +37,7 @@ func New() (*Config, error) {
 	config.IsDebug = IsDebug
 	config.LengthOfCode = 6
 	config.DurationOfWriteToDisk = time.Second * 2
+	config.MemoryPath = ".mem"
 	config.Server = ServerConfig{
 		Port: Port,
 	}

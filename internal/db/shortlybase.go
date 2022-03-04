@@ -23,16 +23,23 @@ type DB struct {
 }
 
 type ShortlyBase struct {
-	FileName string
-	Log      *log.ShortlyLog
+	FileName   string
+	Log        *log.ShortlyLog
+	MemoryPath string
 }
 
 func (s *ShortlyBase) InitialDB() (*DB, error) {
-	path := fmt.Sprintf("%s.json", s.FileName)
+	path := fmt.Sprintf("%s/%s.json", s.MemoryPath, s.FileName)
 
 	// File exist control
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		f, err := os.Create(path)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = f.Write([]byte("{}"))
+
 		if err != nil {
 			return nil, err
 		}
@@ -65,10 +72,10 @@ func (s *ShortlyBase) InitialDB() (*DB, error) {
 	return DB, nil
 }
 
-func (s *ShortlyBase) SaveToFile(db *DB) error {
+func (s *ShortlyBase) SaveToFile(db *DB, memoryPath string) error {
 	filePermissionCode := 0600
 
-	path := fmt.Sprintf("%s.json", s.FileName)
+	path := fmt.Sprintf("%s/%s.json", memoryPath, s.FileName)
 
 	fileData, _ := json.Marshal(db)
 

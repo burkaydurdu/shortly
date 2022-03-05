@@ -1,0 +1,172 @@
+definitions:
+  db.Shortly:
+    properties:
+      code:
+        type: string
+      original_url:
+        type: string
+      short_url:
+        type: string
+      visit_count:
+        type: integer
+    type: object
+  shortly.ErrResponseDTO:
+    properties:
+      code:
+        type: integer
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  shortly.SaveRequestDTO:
+    properties:
+      original_url:
+        type: string
+    type: object
+  shortly.SaveResponseDTO:
+    properties:
+      short_url:
+        type: string
+    type: object
+info:
+  contact:
+    email: support@shortly.io
+    name: API Support
+    url: http://www.shortly.io/support
+  description: Shortly is URL Shortener
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Shortly API DOC
+  version: "1.0"
+paths:
+  /{code}:
+    delete:
+      description: It redirects from short URL to original URL
+      parameters:
+      - description: Shortly Code
+        in: path
+        name: code
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Short URL
+      tags:
+      - Redirect
+    get:
+      description: It redirects from short URL to original URL
+      parameters:
+      - description: Shortly Code
+        in: path
+        name: code
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Short URL
+      tags:
+      - Redirect
+    post:
+      description: It redirects from short URL to original URL
+      parameters:
+      - description: Shortly Code
+        in: path
+        name: code
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Short URL
+      tags:
+      - Redirect
+    put:
+      description: It redirects from short URL to original URL
+      parameters:
+      - description: Shortly Code
+        in: path
+        name: code
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Short URL
+      tags:
+      - Redirect
+  /api/v1/create:
+    post:
+      consumes:
+      - application/json
+      description: It gives short URL
+      parameters:
+      - description: Original URL is required
+        in: body
+        name: original_url
+        required: true
+        schema:
+          $ref: '#/definitions/shortly.SaveRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/shortly.SaveResponseDTO'
+        "400":
+          description: Request body is not valid
+          schema:
+            $ref: '#/definitions/shortly.ErrResponseDTO'
+        "409":
+          description: URL is not valid
+          schema:
+            $ref: '#/definitions/shortly.ErrResponseDTO'
+      summary: Generate short URL
+      tags:
+      - Create Short URL
+  /api/v1/health:
+    get:
+      description: It helps server tracking
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: ""
+      summary: Server Health
+      tags:
+      - Health
+  /api/v1/list:
+    get:
+      description: It gives all shortly data
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/db.Shortly'
+            type: array
+      summary: Get All Shortly List
+      tags:
+      - All Shortly List
+swagger: "2.0"

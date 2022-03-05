@@ -10,7 +10,7 @@ import (
 
 type Service interface {
 	RedirectURL(code string) (string, error)
-	SaveShortURL(host string, requestBody *SaveRequestDTO) *SaveResponseDTO
+	CreateShortURL(host string, requestBody *SaveRequestDTO) *SaveResponseDTO
 	GetShortList() []db.Shortly
 }
 
@@ -31,7 +31,7 @@ func (s *shortlyService) RedirectURL(code string) (string, error) {
 	return "", shortlyError.ErrAddressNotFound
 }
 
-func (s *shortlyService) SaveShortURL(host string, requestBody *SaveRequestDTO) *SaveResponseDTO {
+func (s *shortlyService) CreateShortURL(host string, requestBody *SaveRequestDTO) *SaveResponseDTO {
 	code := generateShortlyCode(s.db.ShortURL, s.lengthOfCode)
 
 	shortly := db.Shortly{

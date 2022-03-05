@@ -15,6 +15,7 @@ import (
 
 	"github.com/burkaydurdu/shortly/config"
 	shortlyError "github.com/burkaydurdu/shortly/pkg/error"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type route struct {
@@ -96,25 +97,38 @@ func (s *Server) Start() error {
 	shortlyService := shortly.NewShortlyService(db, s.config.LengthOfCode)
 	shortlyHandler := shortly.NewShortlyHandler(shortlyService, s.l)
 
+	// For Swagger API Documentation
+	// We want to serve our api docs
+	fs := http.FileServer(http.Dir("./docs"))
+	s.s.Handler(regexp.MustCompile("/docs/"), http.StripPrefix("/docs/", fs))
+
 	s.s.Handler(
-		regexp.MustCompile("/api/health"),
+		regexp.MustCompile("/api/v1/health"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(s.healthCheck)),
 	)
 
 	s.s.Handler(
-		regexp.MustCompile("/api/save"),
-		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.SaveShortURL)),
+		regexp.MustCompile("/api/v1/create"),
+		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.CreateShortURL)),
 	)
 
 	s.s.Handler(
-		regexp.MustCompile("api/list"),
+		regexp.MustCompile("api/v1/list"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.GetShortList)),
 	)
 
+	// Short URL End-point.
 	s.s.Handler(
 		regexp.MustCompile("^/[^/]*$"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.RedirectURL)),
 	)
+
+	// Serve Swagger UI
+	s.s.Handler(
+		regexp.MustCompile("/swagger/"),
+		httpSwagger.Handler(
+			httpSwagger.URL("/docs/swagger.json"),
+			httpSwagger.DomID("#swagger-ui")))
 
 	err = http.ListenAndServe(
 		fmt.Sprintf(":%d", s.config.Server.Port),
@@ -124,6 +138,13 @@ func (s *Server) Start() error {
 	return err
 }
 
+// Health Handler
+// @Summary Server Health
+// @Description It helps server tracking
+// @Tags Health
+// @Produce text/plain
+// @Success 200
+// @Router /api/v1/health [get]
 func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte("OK"))
 

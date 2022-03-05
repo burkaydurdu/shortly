@@ -1,2 +1,2 @@
 # Health Request
-GET http://localhost:6161/api/health
+GET http://localhost:6161/api/v1/health

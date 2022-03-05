@@ -7,3 +7,9 @@ type SaveRequestDTO struct {
 type SaveResponseDTO struct {
 	ShortURL string `json:"short_url"`
 }
+
+type ErrResponseDTO struct {
+	Message string `json:"message"`
+	Error   string `json:"error"`
+	Code    int    `json:"code"`
+}

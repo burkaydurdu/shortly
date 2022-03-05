@@ -102,6 +102,12 @@ func (s *Server) Start() error {
 	fs := http.FileServer(http.Dir("./docs"))
 	s.s.Handler(regexp.MustCompile("/docs/"), http.StripPrefix("/docs/", fs))
 
+	// Serve Swagger UI
+	s.s.Handler(
+		regexp.MustCompile("/api/swagger/.*"),
+		httpSwagger.Handler(
+			httpSwagger.URL("/docs/swagger.json")))
+
 	s.s.Handler(
 		regexp.MustCompile("/api/v1/health"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(s.healthCheck)),
@@ -122,13 +128,6 @@ func (s *Server) Start() error {
 		regexp.MustCompile("^/[^/]*$"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.RedirectURL)),
 	)
-
-	// Serve Swagger UI
-	s.s.Handler(
-		regexp.MustCompile("/swagger/"),
-		httpSwagger.Handler(
-			httpSwagger.URL("/docs/swagger.json"),
-			httpSwagger.DomID("#swagger-ui")))
 
 	err = http.ListenAndServe(
 		fmt.Sprintf(":%d", s.config.Server.Port),

@@ -100,7 +100,7 @@ func (s *shortlyHandler) GetShortList(w http.ResponseWriter, _ *http.Request) {
 	shortlyURL := s.s.GetShortList()
 
 	// when the list is empty it returns null therefore we should create this object.
-	if len(shortlyURL) <= 0 {
+	if len(shortlyURL) == 0 {
 		shortlyURL = make([]db.Shortly, 0)
 	}
 

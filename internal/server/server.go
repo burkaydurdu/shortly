@@ -81,9 +81,8 @@ func (s *Server) Start() error {
 	log.Printf("Listening on :%d...", s.config.Server.Port)
 
 	shortlyBase := shortlyDB.ShortlyBase{
-		FileName:   "shortly",
-		Log:        s.l,
-		MemoryPath: s.config.MemoryPath,
+		Config: s.config,
+		Log:    s.l,
 	}
 
 	db, err := shortlyBase.InitialDB()

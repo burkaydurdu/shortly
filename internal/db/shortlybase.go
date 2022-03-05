@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
+
+	"github.com/burkaydurdu/shortly/config"
 
 	"github.com/burkaydurdu/shortly/pkg/log"
 )
@@ -33,13 +34,12 @@ func (d *DB) FindByCode(code string) *Shortly {
 }
 
 type ShortlyBase struct {
-	FileName   string
-	Log        *log.ShortlyLog
-	MemoryPath string
+	Log    *log.ShortlyLog
+	Config *config.Config
 }
 
 func (s *ShortlyBase) InitialDB() (*DB, error) {
-	path := fmt.Sprintf("%s/%s.json", s.MemoryPath, s.FileName)
+	path := fmt.Sprintf("%s/%s.json", s.Config.MemoryPath, s.Config.MemoryFileName)
 
 	// File exist control
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
@@ -48,7 +48,7 @@ func (s *ShortlyBase) InitialDB() (*DB, error) {
 			return nil, err
 		}
 
-		_, err = f.Write([]byte("{}"))
+		_, err = f.WriteString("{}")
 
 		if err != nil {
 			return nil, err
@@ -70,18 +70,18 @@ func (s *ShortlyBase) InitialDB() (*DB, error) {
 func (s *ShortlyBase) SaveToFile(db *DB) error {
 	filePermissionCode := 0600
 
-	path := fmt.Sprintf("%s/%s.json", s.MemoryPath, s.FileName)
+	path := fmt.Sprintf("%s/%s.json", s.Config.MemoryPath, s.Config.MemoryFileName)
 
 	fileData, _ := json.Marshal(db)
 
-	return ioutil.WriteFile(path, fileData, fs.FileMode(filePermissionCode))
+	return os.WriteFile(path, fileData, fs.FileMode(filePermissionCode))
 }
 
 func (s *ShortlyBase) ReadFromFile() (*DB, error) {
-	path := fmt.Sprintf("%s/%s.json", s.MemoryPath, s.FileName)
+	path := fmt.Sprintf("%s/%s.json", s.Config.MemoryPath, s.Config.MemoryFileName)
 
 	// read in the local data
-	file, err := ioutil.ReadFile(path)
+	file, err := os.ReadFile(path)
 
 	if err != nil {
 		return nil, err

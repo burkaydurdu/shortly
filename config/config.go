@@ -28,6 +28,7 @@ type Config struct {
 	DurationOfWriteToDisk time.Duration
 	Server                ServerConfig
 	MemoryPath            string
+	MemoryFileName        string
 }
 
 func New() (*Config, error) {
@@ -38,6 +39,7 @@ func New() (*Config, error) {
 	config.LengthOfCode = 6
 	config.DurationOfWriteToDisk = time.Second * 2
 	config.MemoryPath = ".mem"
+	config.MemoryFileName = "shortly"
 	config.Server = ServerConfig{
 		Port: Port,
 	}
@@ -45,6 +47,6 @@ func New() (*Config, error) {
 	return config, nil
 }
 
-func (c Config) Print() {
+func (c *Config) Print() {
 	fmt.Printf("%+v\n", c) // [TODO] should improve in here
 }

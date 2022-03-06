@@ -1,5 +1,6 @@
 # Shortly
 ___
+![](./img/shortly.png)
 
 Shortly is a URL shortener service.
 

@@ -5,3 +5,7 @@ lint:
 .PHONY: unit-test
 unit-test:
 	go test -v ./... -coverprofile=unit_coverage.out -short -tags=unit
+
+.PHONY: run
+run:
+	go run .

@@ -56,7 +56,7 @@ func (c *Config) Print() {
 func shortlyViberString(envKey, defaultKey string) string {
 	envValue := os.Getenv(envKey)
 
-	if len(envValue) == 0 {
+	if envValue == "" {
 		return defaultKey
 	}
 
@@ -66,7 +66,9 @@ func shortlyViberString(envKey, defaultKey string) string {
 func shortlyViberInt(envKey string, defaultValue int) int {
 	envValue := os.Getenv(envKey)
 
-	envIntegerValue, err := strconv.ParseInt(envValue, 10, 64)
+	base, bit := 10, 64
+
+	envIntegerValue, err := strconv.ParseInt(envValue, base, bit)
 
 	if err != nil {
 		return defaultValue

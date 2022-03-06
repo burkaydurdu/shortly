@@ -1,5 +1,5 @@
 .idea
 .mem/*.json
-unit_coverage.out
 shortly
 dist/
+*.out

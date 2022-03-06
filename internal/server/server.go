@@ -21,6 +21,7 @@ import (
 type route struct {
 	pattern *regexp.Regexp
 	handler http.Handler
+	method  string
 }
 
 type ShortlyMux struct {
@@ -28,17 +29,17 @@ type ShortlyMux struct {
 	l      *shortlyLog.ShortlyLog
 }
 
-func (h *ShortlyMux) Handler(pattern *regexp.Regexp, handler http.Handler) {
-	h.routes = append(h.routes, &route{pattern, handler})
+func (h *ShortlyMux) Handler(pattern *regexp.Regexp, handler http.Handler, method string) {
+	h.routes = append(h.routes, &route{pattern, handler, method})
 }
 
-func (h *ShortlyMux) HandleFunc(pattern *regexp.Regexp, handler func(http.ResponseWriter, *http.Request)) {
-	h.routes = append(h.routes, &route{pattern, http.HandlerFunc(handler)})
+func (h *ShortlyMux) HandleFunc(pattern *regexp.Regexp, handler func(http.ResponseWriter, *http.Request), method string) {
+	h.routes = append(h.routes, &route{pattern, http.HandlerFunc(handler), method})
 }
 
 func (h *ShortlyMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, route := range h.routes {
-		if route.pattern.MatchString(r.URL.Path) {
+		if route.pattern.MatchString(r.URL.Path) && route.method == r.Method {
 			route.handler.ServeHTTP(w, r)
 			return
 		}
@@ -99,33 +100,39 @@ func (s *Server) Start() error {
 	// For Swagger API Documentation
 	// We want to serve our api docs
 	fs := http.FileServer(http.Dir("./docs"))
-	s.s.Handler(regexp.MustCompile("/docs/"), http.StripPrefix("/docs/", fs))
+	s.s.Handler(regexp.MustCompile("/docs/"), http.StripPrefix("/docs/", fs), http.MethodGet)
 
 	// Serve Swagger UI
 	s.s.Handler(
 		regexp.MustCompile("/api/swagger/.*"),
 		httpSwagger.Handler(
-			httpSwagger.URL("/docs/swagger.json")))
+			httpSwagger.URL("/docs/swagger.json")),
+		http.MethodGet,
+	)
 
 	s.s.Handler(
 		regexp.MustCompile("/api/v1/health"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(s.healthCheck)),
+		http.MethodGet,
 	)
 
 	s.s.Handler(
 		regexp.MustCompile("/api/v1/create"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.CreateShortURL)),
+		http.MethodPost,
 	)
 
 	s.s.Handler(
 		regexp.MustCompile("api/v1/list"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.GetShortList)),
+		http.MethodGet,
 	)
 
 	// Short URL End-point.
 	s.s.Handler(
 		regexp.MustCompile("^/[^/]*$"),
 		HTTPLogMiddleware(s.s.l, http.HandlerFunc(shortlyHandler.RedirectURL)),
+		http.MethodGet,
 	)
 
 	err = http.ListenAndServe(

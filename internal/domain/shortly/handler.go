@@ -32,9 +32,6 @@ type shortlyHandler struct {
 // @Failure 404 {string} string "Not found"
 // @Param code path string true "Shortly Code"
 // @Router /{code} [get]
-// @Router /{code} [post]
-// @Router /{code} [put]
-// @Router /{code} [delete]
 func (s *shortlyHandler) RedirectURL(w http.ResponseWriter, r *http.Request) {
 	// Remove first character `` / ``
 	code := r.URL.Path[1:]

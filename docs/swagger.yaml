@@ -43,24 +43,6 @@ info:
   version: "1.0"
 paths:
   /{code}:
-    delete:
-      description: It redirects from short URL to original URL
-      parameters:
-      - description: Shortly Code
-        in: path
-        name: code
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-        "404":
-          description: Not found
-          schema:
-            type: string
-      summary: Short URL
-      tags:
-      - Redirect
     get:
       description: It redirects from short URL to original URL
       parameters:
@@ -71,43 +53,7 @@ paths:
         type: string
       responses:
         "200":
-          description: ""
-        "404":
-          description: Not found
-          schema:
-            type: string
-      summary: Short URL
-      tags:
-      - Redirect
-    post:
-      description: It redirects from short URL to original URL
-      parameters:
-      - description: Shortly Code
-        in: path
-        name: code
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-        "404":
-          description: Not found
-          schema:
-            type: string
-      summary: Short URL
-      tags:
-      - Redirect
-    put:
-      description: It redirects from short URL to original URL
-      parameters:
-      - description: Shortly Code
-        in: path
-        name: code
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
+          description: Redirect URL
         "404":
           description: Not found
           schema:

@@ -12,6 +12,8 @@ import (
 	"os"
 	"testing"
 
+	shortlyError "github.com/burkaydurdu/shortly/pkg/error"
+
 	"github.com/burkaydurdu/shortly/internal/domain/shortly"
 
 	"github.com/burkaydurdu/shortly/internal/db"
@@ -30,10 +32,9 @@ func (s *ServerSuite) SetupSuite() {
 	conf, _ := config.New()
 
 	conf.Server.Port = 5454
-
+	conf.MemoryPath = "../../.mem"
+	conf.MemoryFileName = "test_shortly"
 	s.config = conf
-	s.config.MemoryPath = "../../.mem"
-	s.config.MemoryFileName = "test_shortly"
 
 	server := NewServer(s.config)
 
@@ -72,7 +73,7 @@ func (s *ServerSuite) TestGetShortList() {
 
 func (s *ServerSuite) TestCreateShortURL() {
 	body := shortly.SaveRequestDTO{
-		OriginalURL: "Http://burkaydurdu.github.io",
+		OriginalURL: "http://burkaydurdu.github.io",
 	}
 
 	byteBody, err := json.Marshal(&body)
@@ -91,6 +92,54 @@ func (s *ServerSuite) TestCreateShortURL() {
 
 	assert.NoError(s.T(), err)
 	assert.NotEmpty(s.T(), response.ShortURL)
+}
+
+func (s *ServerSuite) TestCreateShortURL_InvalidParams() {
+	var body = map[string]int{
+		"original_url": 2,
+	}
+
+	byteBody, err := json.Marshal(&body)
+
+	resp, err := http.Post(
+		fmt.Sprintf("http://localhost:%d/api/v1/create", s.config.Server.Port),
+		"application/json",
+		bytes.NewBuffer(byteBody),
+	)
+
+	var response = shortly.ErrResponseDTO{}
+
+	respBody, err := io.ReadAll(resp.Body)
+
+	err = json.Unmarshal(respBody, &response)
+
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), resp.StatusCode, 400)
+	assert.Equal(s.T(), response.Message, shortlyError.ParserError)
+}
+
+func (s *ServerSuite) TestCreateShortURL_InvalidURL() {
+	body := shortly.SaveRequestDTO{
+		OriginalURL: "http",
+	}
+
+	byteBody, err := json.Marshal(&body)
+
+	resp, err := http.Post(
+		fmt.Sprintf("http://localhost:%d/api/v1/create", s.config.Server.Port),
+		"application/json",
+		bytes.NewBuffer(byteBody),
+	)
+
+	var response = shortly.ErrResponseDTO{}
+
+	respBody, err := io.ReadAll(resp.Body)
+
+	err = json.Unmarshal(respBody, &response)
+
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), resp.StatusCode, 409)
+	assert.Equal(s.T(), response.Message, shortlyError.InvalidURLError)
 }
 
 func (s *ServerSuite) TestRedirectURL() {
@@ -122,6 +171,16 @@ func (s *ServerSuite) TestRedirectURL() {
 
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), resp.StatusCode, http.StatusOK)
+}
+
+func (s *ServerSuite) TestRedirectURL_NotFound() {
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/xxxx", s.config.Server.Port))
+
+	respBody, err := io.ReadAll(resp.Body)
+
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), string(respBody), "404 page not found\n")
+	assert.Equal(s.T(), resp.StatusCode, http.StatusNotFound)
 }
 
 func removeDB(config *config.Config) {
